@@ -1,0 +1,178 @@
+<html>
+ <head>
+  <style>
+   body {
+       margin: 0;
+       padding: 0;
+   }
+   h1 {
+       font-size: 20px;
+       margin: 0;
+       padding: 6px;
+       background-color: black;
+       color: white;
+       font-weight: bold;
+   }
+   #edit {
+       margin-right: calc(275px + 12px + 3px);
+       padding: 6px;
+   }
+   #search {
+       position: fixed;
+       right: 0;
+       top: 32px;
+       bottom: 0;
+       width: 275px;
+       padding: 6px;
+       border-left: solid 3px #808080;
+       overflow-y: scroll;
+   }
+   #editheader {
+       font-size: 16px;
+       background-color: #c0c0c0;
+       padding: 4px;
+       margin-bottom: 4px;
+   }
+   .edittitle {
+       font-weight: bold;
+   }
+   .editprops {
+       margin-left: 4px;
+       color: #808080;
+   }
+   #maineditor {
+       width: 100%;
+       height: calc(100% - 32px - 28px - 20px);
+       font-size: 12pt;
+   }
+   #newfile {
+       margin-right: 16px;
+   }
+   .result, .searchheaders {
+       font-size: 12px;
+       white-space: nowrap;
+       cursor: pointer;
+       padding-left: 6px;
+       vertical-align: top;
+   }
+   .searchheaders {
+       margin-top: 4px;
+       font-weight: bold;
+       color: #808080;
+       border-bottom: solid 1px #808080;
+       margin-bottom: 2px;
+   }
+   .result:hover {
+       color: #0000ff;
+       text-decoration: underline;
+   }
+   /* TODO search headers are not vertically aligned */
+   .result-title {
+       display: inline-block;
+       width: calc(100% - 40px - 50px);
+       overflow-x: hidden;
+       text-overflow: ellipsis;
+   }
+   .result-age {
+       display: inline-block;
+       width: 40px;
+       text-align: right;
+   }
+   .result-folder {
+       display: inline-block;
+       width: 50px;
+       overflow-x: hidden;
+       text-overflow: ellipsis;
+       text-align: center;
+   }
+   #preview {
+       display: none;
+       position: fixed;
+       right: 285px;
+       top: 64px;
+       bottom: 64px;
+       width: calc(75% - 285px);
+       border: solid 3px #808080;
+       background-color: #c0d0e0;
+       color: #404040;
+   }
+   .result.previewing {
+       background-color: #c0d0e0;
+   }
+   .pvw-title {
+       font-weight: bold;
+       background-color: #a0b0c0;
+       margin-bottom: 8px;
+       padding: 2px 6px;
+   }
+   .pvw-content {
+       white-space: pre;
+       padding: 2px 6px;
+       overflow-y: scroll;
+   }
+   .pvw-content .highlight {
+       font-weight: bold;
+       color: #000;
+   }
+   .pvw-tools {
+       float: right;
+   }
+
+    /*
+    .arrow_box {
+        position: relative;
+        background: #88b7d5;
+        border: 4px solid #c2e1f5;
+    }
+    .arrow_box:after, .arrow_box:before {
+        left: 100%;
+        top: 50%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+    }
+    .arrow_box:after {
+        border-color: rgba(136, 183, 213, 0);
+        border-left-color: #88b7d5;
+        border-width: 30px;
+        margin-top: -30px;
+    }
+    .arrow_box:before {
+        border-color: rgba(194, 225, 245, 0);
+        border-left-color: #c2e1f5;
+        border-width: 36px;
+        margin-top: -36px;
+    }*/
+  </style>
+  <script src="jquery.js"></script>
+  <script src="page.js"></script>
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> -->
+ </head>
+ <body>
+  <h1>NoteCloud v0.01</h1>
+  <div id="edit">
+      <div id="editheader">
+          <button id="newfile">new</button>
+          editing: "<span class="edittitle"></span>"
+          <span class="editprops"></span>
+      </div>
+      <textarea id="maineditor"></textarea>
+  </div>
+  <div id="search">
+      Search:
+      <input type="text" id="searchbox" size="20"/>
+      <input type="button" id="searchbutton" value="-&gt;"/>
+      <br/>
+      <div class="searchheaders">
+          <span class="result-title">title</span>
+          <span class="result-age">age</span>
+          <span class="result-folder">folder</span>
+      </div>
+      <div id="searchresults"></div>
+  </div>
+  <div id="preview"></div>
+ </body>
+</html>
