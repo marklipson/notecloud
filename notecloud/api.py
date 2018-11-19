@@ -85,6 +85,9 @@ class API(object):
         full_path = os.path.join(self.root_folder, path + ".txt")
         if os.path.exists(full_path):
             os.remove(full_path)
+        subfolder = os.path.dirname(full_path)
+        if "/" in path and not os.listdir(subfolder):
+            os.rmdir(subfolder)
 
     def search_notes(self, spec="", limit=20):
         """

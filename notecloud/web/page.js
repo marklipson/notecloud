@@ -129,7 +129,7 @@ function draw_results(results, resultsarea, open_file, highlights){
         hover_preview(descr, result.path, highlights);
     }
 }
-function setup_autosearch(searchbox, resultsarea, searchbutton, open_file) {
+function setup_autosearch(searchbox, resultsarea, searchbutton, clearsearch, open_file) {
     var active = null;
     var prev_spec = null;
     function do_search(force){
@@ -142,17 +142,39 @@ function setup_autosearch(searchbox, resultsarea, searchbutton, open_file) {
             });
         }
     }
-    function request_search(){
+    function request_search(force){
         if (active)
             clearTimeout(active);
-        active = setTimeout(do_search, 500);
+        active = setTimeout(function() {
+          do_search(force);
+        }, 500);
+    }
+    function setup_refresh_autosearch()
+    {
+      // as long as mouse is not over search area, refresh search every so often
+      var mouse_over_search = false;
+      $("#search" ).mouseover(function(){
+        mouse_over_search = true;
+      }).mouseout(function(){
+        mouse_over_search = false;
+      });
+      setInterval(function(){
+        if (! mouse_over_search)
+          request_search(1);
+      }, 15000 );
     }
     searchbox.keyup(request_search);
     searchbutton.click(function(){ do_search(true); });
+    clearsearch.click(function(){
+      searchbox.val("");
+      request_search();
+    });
     // do an initial search to show recent entries
     do_search(1);
+    // keep search results up to date
+    setup_refresh_autosearch();
 }
-function setup_editor(edittitle, editprops, editbox, newbutton){
+function setup_editor(edittitle, editprops, editbox, newbutton, editorstatus){
     var active = null;
     var current_path = "";
     var prev_content = null;
@@ -185,12 +207,14 @@ function setup_editor(edittitle, editprops, editbox, newbutton){
                 update_props(props);
                 if (after)
                   after();
+                editorstatus.text("all changes saved");
             });
         }
         else if (after)
           after();
     }
     function request_save(){
+        editorstatus.text("SAVING...");
         if (active)
             clearTimeout(active);
         active = setTimeout(do_save, 500);
@@ -235,11 +259,7 @@ function setup_autohash(open_file){
     goto_hash();
 }
 $(function(){
-    var open_file = setup_editor($(".edittitle"), $(".editprops"), $("#maineditor"), $("#newfile"));
-    setup_autosearch($("#searchbox"), $("#searchresults"), $("#searchbutton"), open_file);
+    var open_file = setup_editor($(".edittitle"), $(".editprops"), $("#maineditor"), $("#newfile"), $(".editorstatus"));
+    setup_autosearch($("#searchbox"), $("#searchresults"), $("#searchbutton"), $("#clearsearch"), open_file);
     setup_autohash(open_file);
-
-    //TODO don't preview current file
-    //TODO button to clear search
-    //TODO align search headers & results
 });
