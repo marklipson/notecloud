@@ -3,9 +3,10 @@ from notecloud.api import API
 from notecloud.util import parse_note
 import json
 import mimetypes
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from urlparse import parse_qs
-#from urllib.parse import parse_qs
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs
+#from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+#from urlparse import parse_qs
 
 PORT = 15301
 API_ROOT = "/api/"
@@ -49,12 +50,12 @@ class WebHandler(BaseHTTPRequestHandler):
             if isinstance(content, dict):
                 self.send_header('Content-type', "application/javascript")
                 self.end_headers()
-                self.wfile.write(json.dumps(content))
+                self.wfile.write(json.dumps(content).encode("utf-8"))
             else:
                 mime_type = mimetypes.guess_type(self.path) or "text/plain"
                 self.send_header('Content-type', mime_type[0])
                 self.end_headers()
-                self.wfile.write(content)
+                self.wfile.write(content if isinstance(content, bytes) else content.encode("utf-8"))
         else:
             self.send_response(404)
             self.send_header('Content-type','text/plain')
@@ -68,7 +69,7 @@ class WebHandler(BaseHTTPRequestHandler):
             rel = self.path[len(API_ROOT):]
             if rel.startswith(API_NOTE):
                 rel = rel[len(API_NOTE):]
-                content = post_data
+                content = post_data.decode("utf-8")
                 if rel:
                     path = api.write_note(rel, content)
                 else:
@@ -78,12 +79,12 @@ class WebHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type','application/javascript')
             self.end_headers()
-            self.wfile.write(json.dumps(resp, indent=2))
+            self.wfile.write(json.dumps(resp, indent=2).encode("utf-8"))
         else:
             self.send_response(404)
             self.send_header('Content-type','text/plain')
             self.end_headers()
-            self.wfile.write("Not found: %s" % self.path)
+            self.wfile.write(("Not found: %s" % self.path).encode("utf-8"))
 
 
 if __name__ == "__main__":

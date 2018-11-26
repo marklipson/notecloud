@@ -1,4 +1,8 @@
-function read_note(path, send_to) {
+(function($){
+  // currently open file
+  var current_path = "";
+
+  function read_note(path, send_to) {
     $.ajax({
         url: "/api/note/" + encodeURI(path),
         method: "get",
@@ -6,8 +10,8 @@ function read_note(path, send_to) {
     }).done(function(resp){
         send_to(resp);
     });
-}
-function write_note(path, content, on_stored) {
+  }
+  function write_note(path, content, on_stored) {
     $.ajax({
         url: "/api/note/" + encodeURI(path),
         method: "post",
@@ -16,8 +20,8 @@ function write_note(path, content, on_stored) {
     }).done(function(resp){
         on_stored(resp.path, resp.props);
     });
-}
-function search_notes(spec, results_to) {
+  }
+  function search_notes(spec, results_to) {
     $.ajax({
         url: "/api/note/",
         data: {spec: spec},
@@ -26,8 +30,8 @@ function search_notes(spec, results_to) {
     }).done(function(resp){
         results_to(resp.results, resp.highlights);
     });
-}
-function format_age(age) {
+  }
+  function format_age(age) {
     age = Math.round(age);
     if (age < 60)
         return "< 1m";
@@ -38,9 +42,9 @@ function format_age(age) {
     if (age < 86400*365)
         return Math.round(age/8640)/10 + "d";
     return Math.round(age/86400*36.52425)/10 + "y";
-}
-function draw_preview(elem, note, highlights)
-{
+  }
+  function draw_preview(elem, note, highlights)
+  {
     var note_content = note.content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;');
     // highlight terms
     for (var n=0; n < highlights.length; n++)
@@ -62,9 +66,11 @@ function draw_preview(elem, note, highlights)
     elem.append(title);
     var content = $("<div>").addClass("pvw-content").html(note_content);
     elem.append(content);
-}
-function hover_preview(elem, path, highlights)
-{
+  }
+  function hover_preview(elem, path, highlights)
+  {
+    if (! path)
+      return;
     var pvw = $("#preview");
     var tmr = null;
     var tmr0 = null;
@@ -78,11 +84,15 @@ function hover_preview(elem, path, highlights)
             rqst_0();
     }
     function do_hover() {
+        // if it's being edited don't show the preview
+        if ($(".result[data-path='"+path+"']").hasClass("editing"))
+          return;
         open = true;
         pvw.fadeIn();
         elem.addClass("previewing");
         pvw.bind("mouseover", h_pvw_1);
         pvw.bind("mouseout", h_pvw_0);
+        // open the preview
         read_note(path, function(note){
             draw_preview(pvw, note, highlights);
         });
@@ -109,13 +119,15 @@ function hover_preview(elem, path, highlights)
     }
     elem.mouseover(rqst_1);
     elem.mouseout(rqst_0);
-}
-function draw_results(results, resultsarea, open_file, highlights){
+  }
+  function draw_results(results, resultsarea, open_file, highlights){
     resultsarea.text("");
     for (var n=0; n < results.length; n++)
     {
         var result = results[n];
         var descr = $("<div>").addClass("result").attr("data-path", result.path);
+        if (result.path == current_path)
+          descr.addClass("editing");
         var d_title = $("<span>").addClass("result-title" ).text(result.props.title);
         var d_age = $("<span>" ).addClass("result-age").text(format_age(result.props.age));
         var d_folder = $("<span>" ).addClass("result-folder").text(result.props.folder);
@@ -125,11 +137,12 @@ function draw_results(results, resultsarea, open_file, highlights){
             var path = $(this).attr("data-path");
             var title = $(this).find(".result-title").text();
             open_file(path, title);
+            $("#preview").hide();
         });
         hover_preview(descr, result.path, highlights);
     }
-}
-function setup_autosearch(searchbox, resultsarea, searchbutton, clearsearch, open_file) {
+  }
+  function setup_autosearch(searchbox, resultsarea, searchbutton, clearsearch, open_file) {
     var active = null;
     var prev_spec = null;
     function do_search(force){
@@ -173,10 +186,9 @@ function setup_autosearch(searchbox, resultsarea, searchbutton, clearsearch, ope
     do_search(1);
     // keep search results up to date
     setup_refresh_autosearch();
-}
-function setup_editor(edittitle, editprops, editbox, newbutton, editorstatus){
+  }
+  function setup_editor(edittitle, editprops, editbox, newbutton, editorstatus){
     var active = null;
-    var current_path = "";
     var prev_content = null;
     function update_props(props){
         var msg = "";
@@ -201,19 +213,25 @@ function setup_editor(edittitle, editprops, editbox, newbutton, editorstatus){
         if (content != prev_content)
         {
             prev_content = content;
-            write_note(current_path, content, function(path, props){
-                current_path = path;
-                window.location.hash = path;
+            write_note(current_path || "", content, function(path, props){
+                current_path = content ? path : "";
+                window.location.hash = current_path;
                 update_props(props);
+                editorstatus.text("all changes saved");
                 if (after)
                   after();
-                editorstatus.text("all changes saved");
             });
         }
-        else if (after)
-          after();
+        else {
+          editorstatus.text("all changes saved");
+          if (after)
+            after();
+        }
     }
     function request_save(){
+        // TODO look for "?[fs...] at BOL
+        // TODO strip those out of the content
+        // TODO do things based on those commands
         editorstatus.text("SAVING...");
         if (active)
             clearTimeout(active);
@@ -227,6 +245,9 @@ function setup_editor(edittitle, editprops, editbox, newbutton, editorstatus){
                 prev_content = note.content;
                 editbox.val(note.content);
                 update_props(note.props);
+                // show in search results
+                $(".result.editing").removeClass("editing");
+                $(".result[data-path='"+path+"']").addClass("editing")
             });
         });
     }
@@ -240,9 +261,18 @@ function setup_editor(edittitle, editprops, editbox, newbutton, editorstatus){
             editbox.val("");
         });
     });
+    $("#deletefile").click(function(){
+      if (! current_path)
+        return;
+      if (confirm("Are you sure you want to delete " + current_path + "?")){
+        // resetting content causes file to be deleted
+        $("#maineditor" ).val("");
+        request_save();
+      }
+    });
     return open_file;
-}
-function setup_autohash(open_file){
+  }
+  function setup_autohash(open_file){
     function goto_hash()
     {
         var h = window.location.hash;
@@ -257,9 +287,11 @@ function setup_autohash(open_file){
     });
     // go to initial hash location
     goto_hash();
-}
-$(function(){
+  }
+  $(function(){
     var open_file = setup_editor($(".edittitle"), $(".editprops"), $("#maineditor"), $("#newfile"), $(".editorstatus"));
     setup_autosearch($("#searchbox"), $("#searchresults"), $("#searchbutton"), $("#clearsearch"), open_file);
     setup_autohash(open_file);
-});
+  });
+
+})(jQuery);

@@ -4,6 +4,7 @@ Storage and retrieval of notes.
 import os
 import re
 import time
+from collections import defaultdict
 from notecloud import util
 
 
@@ -78,7 +79,7 @@ class API(object):
             self.delete_note(del_old)
         return path
 
-    def delete_note(self, path):
+    def delete_note(self, path: str):
         """
         Delete a note.
         """
@@ -89,12 +90,18 @@ class API(object):
         if "/" in path and not os.listdir(subfolder):
             os.rmdir(subfolder)
 
-    def search_notes(self, spec="", limit=20):
+    def search_notes(self, spec: str="", limit: int=20):
         """
         Search notes...
         :param spec:  See util.parse_search_spec()
         :return:  A [] of matching notes.
         """
+        if re.match(r'^\?s(\s|$)', spec) is not None:
+            spec = spec[3:]
+        if re.match(r'^\?f(\s|$)', spec) is not None:
+            return self.search_notes_folders(spec[3:], limit=limit)
+        if re.match(r'^\?t(\s|$)', spec) is not None:
+            return self.search_notes_tags(spec[3:], limit=limit)
         t_now = time.time()
         results = []
         matcher, highlights = util.parse_search_spec(spec)
@@ -116,3 +123,59 @@ class API(object):
         results = list(sorted(results, key=lambda r:r["props"].get("age", 0)))
         results = results[:limit]
         return results, highlights
+
+    def search_notes_folders(self, spec: str="", limit: int=20):
+        """
+        Search against folder names.
+        """
+        t_now = time.time()
+        results = []
+        matcher, highlights = util.parse_search_spec(spec)
+        for path, dirs, files in os.walk(self.root_folder):
+            # we scan files to get an accurate age
+            mtimes = [os.stat(path).st_mtime]
+            for f in files:
+                full = os.path.join(path, f)
+                if not full.endswith(".txt"):
+                    continue
+                mtimes.append(os.stat(full).st_mtime)
+            rel = path[len(self.root_folder):]
+            if matcher(rel) is None:
+                continue
+            props = {"title": "folder: %s" % rel, "folder": rel, "age": t_now - max(mtimes)}
+            results.append({"path": "", "content": rel, "props": props})
+        # sort by age
+        results = list(sorted(results, key=lambda r:r["props"].get("age", 0)))
+        results = results[:limit]
+        return results, highlights
+
+    def search_notes_tags(self, spec: str="", limit: int=20):
+        """
+        Search against folder names.
+        """
+        t_now = time.time()
+        results = []
+        matcher, highlights = util.parse_search_spec(spec)
+        tags = defaultdict(list)
+        for path, dirs, files in os.walk(self.root_folder):
+            for f in files:
+                full = os.path.join(path, f)
+                if not full.endswith(".txt"):
+                    continue
+                with open(full) as fR:
+                    content = fR.read()
+                    props = util.parse_note(content)
+                    for tag in props.get("tag",[]):
+                        tags[tag].append(os.stat(full).st_mtime)
+        for tag, mtimes in tags.items():
+            if not matcher(tag):
+                continue
+            props = {"title": "tag: %s" % tag, "folder": "", "count": len(mtimes), "age": t_now - max(mtimes)}
+            results.append({"path": "", "content": "", "props": props})
+        # sort by age
+        results = list(sorted(results, key=lambda r:r["props"].get("age", 0)))
+        results = results[:limit]
+        return results, highlights
+
+
+

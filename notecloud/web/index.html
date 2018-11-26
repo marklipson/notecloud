@@ -4,6 +4,7 @@
    body {
        margin: 0;
        padding: 0;
+       background-color: #404040;
    }
    h1 {
        font-size: 20px;
@@ -14,22 +15,23 @@
        font-weight: bold;
    }
    #edit {
-       margin-right: calc(275px + 12px + 3px);
+       margin-right: calc(275px + 15px);
        padding: 6px;
    }
    #search {
        position: fixed;
-       right: 0;
-       top: 32px;
-       bottom: 0;
+       right: 4px;
+       top: 40px;
+       bottom: 8px;
        width: 275px;
        padding: 6px;
        border-left: solid 3px #808080;
        overflow-y: scroll;
+       background-color: #d0d0c0;
    }
    #editheader {
        font-size: 16px;
-       background-color: #c0c0c0;
+       background-color: #c0c080;
        padding: 4px;
        margin-bottom: 4px;
    }
@@ -54,6 +56,18 @@
        padding: 4px;
        background-color: #fcF8D0;
    }
+   #deletefile {
+       border-radius: 8px;
+       border-color: #a00000;
+       color: #a00000;
+       background-color: #c0c0c0;
+       padding: 1px 4px;
+   }
+   #deletefile:hover {
+       background-color: #a00000;
+       color: white;
+       cursor: pointer;
+   }
    #newfile {
        margin-right: 16px;
    }
@@ -74,6 +88,9 @@
    .result:hover {
        color: #0000ff;
        text-decoration: underline;
+   }
+   .result.editing {
+       font-weight: bold;
    }
    /* TODO search headers are not vertically aligned */
    .result-title {
@@ -133,8 +150,9 @@
   <h1>NoteCloud v0.01</h1>
   <div id="edit">
       <div id="editheader">
-          <button id="newfile">new</button>
-          editing: "<span class="edittitle"></span>"
+          <button id="deletefile" title="delete this article forever">X</button>
+          <button id="newfile" title="save this file and start a new file">close/new</button>
+          "<span class="edittitle" title="Title of article below."></span>"
           <span class="editprops"></span>
           <span class="editorstatus"></span>
       </div>

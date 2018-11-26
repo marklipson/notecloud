@@ -3,8 +3,8 @@ Parsing of properties out of notes.
 """
 import re
 import urllib
+import urllib.parse
 import uuid
-
 
 PROP_NAMES = {
     "title",
@@ -67,10 +67,10 @@ def note_filename(note_props):
     path = None
     title = note_props.get("title")
     if title:
-        path = urllib.quote_plus(title)
+        path = urllib.parse.quote_plus(title)
     folder = note_props.get("folder")
     if folder:
-        folder = urllib.quote(folder)
+        folder = urllib.parse.quote(folder)
         if not path:
             path = random_name()
         path = folder + "/" + path
